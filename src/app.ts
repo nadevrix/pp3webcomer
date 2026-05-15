@@ -60,9 +60,14 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// En local, Express sirve también los static. En Vercel, los static los sirve
-// Vercel CDN automáticamente desde public/ — esto queda como no-op.
-app.use(express.static(resolve(__dirname, '../public')));
+// En local, Express sirve también los static (para usar npm run dev sin Vercel).
+// En Vercel los static los sirve el CDN directamente desde public/ — esto se
+// monta solo si el directorio existe (en serverless puede no estar accesible).
+import { existsSync } from 'fs';
+const publicDir = resolve(__dirname, '../public');
+if (existsSync(publicDir)) {
+  app.use(express.static(publicDir));
+}
 
 // ─── Endpoints API ───────────────────────────────────────────────────────────
 
@@ -121,8 +126,30 @@ app.post('/api/checkout/:id/verify', async (req, res) => {
   }
 });
 
-// Servir checkout.html para rutas dinámicas /checkout/:id (solo local; en
-// Vercel esto lo hace un rewrite en vercel.json, pero dejarlo no molesta).
+// Servir checkout.html para rutas dinámicas /checkout/:id (solo local).
+// En Vercel esto lo hace un rewrite en vercel.json, pero dejarlo no rompe.
 app.get('/checkout/:id', (_req, res) => {
-  res.sendFile(resolve(__dirname, '../public/checkout.html'));
+  const file = resolve(__dirname, '../public/checkout.html');
+  if (existsSync(file)) {
+    res.sendFile(file);
+  } else {
+    res.status(404).json({ error: 'checkout.html no encontrado', path: file });
+  }
+});
+
+// Catch-all para diagnostico: si algo cae acá en Vercel, devuelve JSON con
+// info útil en vez de FUNCTION_INVOCATION_FAILED.
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not found in function',
+    path: req.path,
+    method: req.method,
+    hint: 'This path should not reach the function — check vercel.json rewrites',
+  });
+});
+
+// Error handler — si algo throwea, devuelve JSON en vez de crashear la función
+app.use((err: Error, _req: any, res: any, _next: any) => {
+  console.error('[express error]', err);
+  res.status(500).json({ error: err.message, stack: err.stack });
 });
