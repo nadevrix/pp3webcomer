@@ -3,7 +3,7 @@
 // Follow the same export pattern as @pollar/core/index.ts.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export { PollarPayClient } from './client';
+export { PollarPayClient } from './client.js';
 
 export type {
   PollarPayConfig,
@@ -15,6 +15,6 @@ export type {
   PaymentCallbacks,
   WaitForPaymentOptions,
   PayErrorCode,
-} from './types';
+} from './types.js';
 
-export { PAY_ERROR_CODES, FINAL_STATUSES, PollarPayError } from './types';
+export { PAY_ERROR_CODES, FINAL_STATUSES, PollarPayError } from './types.js';

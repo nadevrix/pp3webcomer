@@ -18,8 +18,8 @@ import type {
   PollarPayConfig,
   PayManualCompleteResponse,
   WaitForPaymentOptions,
-} from './types';
-import { FINAL_STATUSES, PollarPayError, PAY_ERROR_CODES } from './types';
+} from './types.js';
+import { FINAL_STATUSES, PollarPayError, PAY_ERROR_CODES } from './types.js';
 
 /** Default polling interval for `waitForPayment()`. */
 const DEFAULT_POLL_INTERVAL_MS = 5_000;
