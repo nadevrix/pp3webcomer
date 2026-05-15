@@ -194,6 +194,108 @@ h1 { font-size: 32px; margin-bottom: 8px; }
 .success-hash { font-size: 12px; }
 .success-hash a { color: #a78bfa; text-decoration: none; }
 
+/* Desglose fee Pollar / neto al comercio (estado completed) */
+.fee-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(167, 139, 250, 0.08);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin: 16px auto;
+  max-width: 320px;
+}
+.fee-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+.fee-label { color: #94a3b8; }
+.fee-value {
+  color: #cbd5e1;
+  font-family: monospace;
+}
+.fee-value-strong {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+/* Página /eventos — webhooks recibidos */
+.empty {
+  text-align: center;
+  color: #94a3b8;
+  padding: 40px 20px;
+  font-size: 13px;
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed rgba(255,255,255,0.1);
+  border-radius: 10px;
+}
+.event {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 12px;
+}
+.event header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.event-type {
+  font-family: monospace;
+  font-size: 13px;
+  color: #a78bfa;
+  font-weight: 600;
+}
+.event-date {
+  font-size: 11px;
+  color: #64748b;
+  margin-left: auto;
+}
+.event-meta {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+.event-meta code {
+  background: rgba(255,255,255,0.05);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.event-payload {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: monospace;
+  font-size: 11px;
+  color: #cbd5e1;
+  overflow-x: auto;
+  white-space: pre;
+}
+.badge-ok, .badge-warn {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-ok {
+  background: rgba(34,197,94,0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34,197,94,0.3);
+}
+.badge-warn {
+  background: rgba(245,158,11,0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245,158,11,0.3);
+}
+
 /* ─── Footer ─────────────────────────────────────────────────────────────── */
 .footer {
   text-align: center;

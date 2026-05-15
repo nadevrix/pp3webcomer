@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eventos webhook — Café Polar</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">☕ <span>Café Polar · webhooks</span></div>
+    <a class="badge" href="/">← Volver a la tienda</a>
+  </header>
+
+  <main class="container">
+    <section class="checkout-card" style="max-width: 900px; width: 100%;">
+      <h2 style="margin-bottom: 8px;">Webhooks recibidos</h2>
+      <p style="color:#94a3b8; font-size: 13px;">
+        Eventos que llegaron a este servidor desde Pollar Pay. Para probarlo: configurá un webhook
+        en <code>/dashboard/avanzado</code> apuntando a <code id="webhook-url-hint"></code>.
+      </p>
+
+      <div id="status-line" style="margin: 12px 0; font-size: 12px; color: #94a3b8;"></div>
+
+      <div id="events"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    Café Polar · demo del SDK <code>@pollar/pay</code>
+  </footer>
+
+  <script src="/eventos.js"></script>
+</body>
+</html>

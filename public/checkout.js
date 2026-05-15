@@ -1,28 +1,16 @@
 // ─── checkout.js ─────────────────────────────────────────────────────────────
-// Frontend del checkout. NO usa el SDK directo — habla con el backend Express
-// que tiene el SDK y la apiKey. El backend abstrae las llamadas a Pollar.
+// Frontend del checkout — NO usa el SDK directo ni la apiKey.
+// Habla solo con el Express backend, que tiene el SDK y ya devuelve:
+//   - `sep7_uri`     → URI que va al QR (armada con buildSep7PayUri del SDK)
+//   - `explorer_url` → link a Stellar Expert cuando hay forward_tx_hash
+// Así el browser queda simple y la lógica de Stellar vive en el SDK.
 
 const transactionId = location.pathname.split('/').pop();
-
 const $ = (id) => document.getElementById(id);
-
-const USDC_ISSUERS = {
-  TESTNET: 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',
-  MAINNET: 'GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN',
-};
 
 let pollInterval = null;
 let expiresAt = null;
 let timerInterval = null;
-
-function buildSep7Uri(intent) {
-  const issuer = USDC_ISSUERS[intent.network] || USDC_ISSUERS.TESTNET;
-  return `web+stellar:pay?destination=${intent.wallet_address}` +
-    `&amount=${intent.amount}` +
-    `&asset_code=USDC` +
-    `&asset_issuer=${issuer}` +
-    `&network_passphrase=${encodeURIComponent(intent.network === 'MAINNET' ? 'Public Global Stellar Network ; September 2015' : 'Test SDF Network ; September 2015')}`;
-}
 
 function renderQR(uri) {
   const qr = qrcode(0, 'M');
@@ -31,8 +19,8 @@ function renderQR(uri) {
   $('qr').innerHTML = qr.createSvgTag({ cellSize: 4, margin: 4 });
 }
 
-function setStatus(status, text) {
-  $('status-dot').className = `status-dot status-${status}`;
+function setStatus(cls, text) {
+  $('status-dot').className = `status-dot status-${cls}`;
   $('status-text').textContent = text;
 }
 
@@ -57,10 +45,21 @@ function showCompleted(status) {
   $('state-pending').style.display = 'none';
   $('state-done').style.display = 'block';
   $('paid-amount').textContent = status.amount_paid;
-  if (status.forward_tx_hash) {
-    const network = status.network === 'MAINNET' ? 'public' : 'testnet';
-    $('explorer-link').href = `https://stellar.expert/explorer/${network}/tx/${status.forward_tx_hash}`;
+  if (status.explorer_url) {
+    $('explorer-link').href = status.explorer_url;
   }
+
+  // Desglose fee/neto — el backend agrega fee_amount y payout_amount cuando la
+  // tx se cierra. Si entró dentro de las 50 gratuitas del tier Free, fee=0 y
+  // mostramos "GRATIS".
+  const fee = parseFloat(status.fee_amount || '0');
+  const payout = parseFloat(status.payout_amount || '0');
+  if (fee > 0 || status.is_free_tx) {
+    $('fee-breakdown').style.display = 'flex';
+    $('fee-amount').textContent = status.is_free_tx ? 'GRATIS' : `${fee.toFixed(2)} USDC`;
+    $('payout-amount').textContent = `${payout > 0 ? payout.toFixed(2) : status.amount_paid} USDC`;
+  }
+
   if (pollInterval) clearInterval(pollInterval);
   if (timerInterval) clearInterval(timerInterval);
 }
@@ -78,15 +77,23 @@ function showFailed(status, customMsg) {
 function applyStatus(status) {
   if (status.status === 'completed' || status.status === 'overpaid') {
     showCompleted(status);
-  } else if (status.status === 'expired' || status.status === 'underpaid' || status.status === 'anomaly' || status.is_expired) {
+  } else if (
+    status.status === 'expired' ||
+    status.status === 'underpaid' ||
+    status.status === 'anomaly' ||
+    status.is_expired
+  ) {
     showFailed(status);
   } else {
-    setStatus('pending', `Esperando pago... (recibido: ${status.amount_paid} / ${status.amount_expected} USDC)`);
+    setStatus(
+      'pending',
+      `Esperando pago... (recibido: ${status.amount_paid} / ${status.amount_expected} USDC)`,
+    );
   }
 }
 
 async function loadIntent() {
-  // Primer fetch para obtener metadata + status inicial
+  // Primera lectura del estado — el backend nos da también el SEP-7 listo.
   const res = await fetch(`/api/checkout/${transactionId}/status`);
   if (!res.ok) {
     $('product-name').textContent = 'Intent no encontrado';
@@ -103,11 +110,22 @@ async function loadIntent() {
   expiresAt = new Date(intent.expires_at).getTime();
   startTimer();
 
-  renderQR(buildSep7Uri({
-    wallet_address: intent.wallet_address,
-    amount: intent.amount_expected,
-    network: 'TESTNET',
-  }));
+  // El SEP-7 viene desde /api/checkout (POST). Si entraste directo a /checkout/:id
+  // sin pasar por la home, hay un segundo origen: el handler reconstruye el SEP-7
+  // a pedido. Acá pedimos /sep7 si no tenemos uno todavía.
+  let sep7Uri = intent.sep7_uri;
+  if (!sep7Uri) {
+    try {
+      const r = await fetch(`/api/checkout/${transactionId}/sep7`);
+      if (r.ok) sep7Uri = (await r.json()).sep7_uri;
+    } catch { /* fallback abajo */ }
+  }
+  if (sep7Uri) {
+    renderQR(sep7Uri);
+  } else {
+    // Último recurso: dejamos visible la dirección y el monto a mano.
+    $('qr').textContent = 'Pegá la dirección y el monto en tu wallet manualmente.';
+  }
 
   applyStatus(intent);
 
