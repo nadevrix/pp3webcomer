@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>☕ Café Polar — Tienda</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">☕ <span>Café Polar</span></div>
+    <div class="badge">Pagos en USDC vía Pollar Pay</div>
+  </header>
+
+  <main class="container">
+    <h1>Catálogo</h1>
+    <p class="subtitle">Elegí un producto, pagá con tu wallet Stellar.</p>
+
+    <div id="grid" class="grid">
+      <!-- Cards dinámicas via JS -->
+      <div class="loading">Cargando productos...</div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>Demo del SDK <code>@pollar/pay</code> · Stellar testnet · USDC</p>
+  </footer>
+
+  <script>
+    const grid = document.getElementById('grid');
+
+    async function loadCatalog() {
+      const res = await fetch('/api/products');
+      const { products } = await res.json();
+
+      grid.innerHTML = '';
+      for (const p of products) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-emoji">${p.image}</div>
+          <div class="card-name">${p.name}</div>
+          <div class="card-price">${p.price.toFixed(2)} <span>USDC</span></div>
+          <button class="btn btn-buy" data-id="${p.id}">Comprar</button>
+        `;
+        card.querySelector('button').addEventListener('click', () => createCheckout(p.id));
+        grid.appendChild(card);
+      }
+    }
+
+    async function createCheckout(productId) {
+      try {
+        const res = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error creando checkout');
+        window.location.href = `/checkout/${data.transaction_id}`;
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    loadCatalog();
+  </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout — Café Polar</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">☕ <span>Café Polar</span></div>
+    <a class="badge" href="/">← Volver a la tienda</a>
+  </header>
+
+  <main class="container checkout-container">
+    <div class="checkout-card">
+      <!-- Estado: pending (visible al inicio) -->
+      <div id="state-pending">
+        <div class="checkout-header">
+          <div id="product-emoji" class="checkout-emoji">⏳</div>
+          <div>
+            <div id="product-name" class="checkout-name">Cargando...</div>
+            <div class="checkout-meta">Stellar Testnet · USDC</div>
+          </div>
+          <div id="amount" class="checkout-amount">— USDC</div>
+        </div>
+
+        <div class="qr-wrap">
+          <div id="qr"></div>
+          <p class="qr-hint">Escaneá con tu wallet Stellar (Lobstr, Freighter)</p>
+        </div>
+
+        <div class="manual-pay">
+          <details>
+            <summary>O pagá manualmente</summary>
+            <div class="manual-row"><span>Destino:</span><code id="wallet-addr">—</code></div>
+            <div class="manual-row"><span>Monto:</span><code id="manual-amount">—</code></div>
+            <div class="manual-row"><span>Asset:</span><code>USDC</code></div>
+          </details>
+        </div>
+
+        <div class="status-row">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Esperando pago...</span>
+          <span class="timer" id="timer"></span>
+        </div>
+
+        <button class="btn btn-verify" id="btn-verify">Verificar pago</button>
+        <p class="hint">El estado se chequea automáticamente cada 5 segundos.</p>
+      </div>
+
+      <!-- Estado: completed (visible cuando se confirma) -->
+      <div id="state-done" style="display:none">
+        <div class="success-icon">✅</div>
+        <h2>Pago recibido</h2>
+        <div class="success-amount"><span id="paid-amount">—</span> USDC</div>
+        <p class="success-msg">Tu pedido fue procesado correctamente.</p>
+        <p class="success-hash">
+          <a id="explorer-link" href="#" target="_blank" rel="noopener">Ver transacción en explorer</a>
+        </p>
+        <a class="btn btn-back" href="/">Volver a la tienda</a>
+      </div>
+
+      <!-- Estado: error/expired -->
+      <div id="state-fail" style="display:none">
+        <div class="fail-icon">⚠️</div>
+        <h2 id="fail-title">Pago no completado</h2>
+        <p id="fail-message">—</p>
+        <a class="btn btn-back" href="/">Volver a la tienda</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="/checkout.js"></script>
+</body>
+</html>

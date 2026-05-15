@@ -1,0 +1,21 @@
+{
+  "name": "merchant-checkout-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Demo de checkout web estilo Stripe usando el SDK @pollar/pay. Arquitectura real: backend Express con apiKey + frontend que solo habla con el backend.",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^20",
+    "tsx": "^4.22.0",
+    "typescript": "^5.7.0"
+  }
+}
