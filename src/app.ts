@@ -14,15 +14,14 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-config({ path: resolve(__dirname, '../.env') });
+// dotenv solo aplica en local; en Vercel las env vars vienen del dashboard.
+try {
+  config({ path: resolve(__dirname, '../.env') });
+} catch { /* sin .env local — ok */ }
 
 const POLLAR_API_KEY = process.env.POLLAR_API_KEY;
 const POLLAR_BACKEND_URL = process.env.POLLAR_BACKEND_URL;
 const CRON_SECRET = process.env.CRON_SECRET;
-
-if (!POLLAR_API_KEY) {
-  throw new Error('Falta POLLAR_API_KEY en las variables de entorno');
-}
 
 // ─── Catálogo (en producción vendría de una DB) ──────────────────────────────
 const CATALOG = [
@@ -32,13 +31,34 @@ const CATALOG = [
   { id: 4, name: 'Bolsa de café (250g)', price: 18.00, image: '📦' },
 ];
 
-const pay = new PollarPayClient({
-  apiKey: POLLAR_API_KEY,
-  baseUrl: POLLAR_BACKEND_URL,
-});
+// Lazy: no crashear al importar el módulo si falta env var.
+// Cada handler usa este getter — si la apiKey no está, devuelve 500 claro.
+let _pay: PollarPayClient | null = null;
+function getPay(): PollarPayClient {
+  if (_pay) return _pay;
+  if (!POLLAR_API_KEY) {
+    throw new Error('Missing POLLAR_API_KEY env var (check Vercel → Settings → Environment Variables)');
+  }
+  _pay = new PollarPayClient({
+    apiKey: POLLAR_API_KEY,
+    baseUrl: POLLAR_BACKEND_URL,
+  });
+  return _pay;
+}
 
 export const app = express();
 app.use(express.json());
+
+// Healthcheck — útil para diagnosticar env vars sin tocar Pollar
+app.get('/api/health', (_req, res) => {
+  res.json({
+    ok: true,
+    has_api_key: Boolean(POLLAR_API_KEY),
+    has_backend_url: Boolean(POLLAR_BACKEND_URL),
+    has_cron_secret: Boolean(CRON_SECRET),
+    backend_url: POLLAR_BACKEND_URL || null,
+  });
+});
 
 // En local, Express sirve también los static. En Vercel, los static los sirve
 // Vercel CDN automáticamente desde public/ — esto queda como no-op.
@@ -57,7 +77,7 @@ app.post('/api/checkout', async (req, res) => {
     return res.status(404).json({ error: 'Producto no existe' });
   }
   try {
-    const intent = await pay.createIntent(product.price, `Pago de ${product.name}`);
+    const intent = await getPay().createIntent(product.price, `Pago de ${product.name}`);
     res.json({
       transaction_id: intent.data.transaction_id,
       wallet_address: intent.data.wallet_address,
@@ -75,7 +95,7 @@ app.post('/api/checkout', async (req, res) => {
 
 app.get('/api/checkout/:id/status', async (req, res) => {
   try {
-    const status = await pay.checkStatus(req.params.id);
+    const status = await getPay().checkStatus(req.params.id);
     res.json(status.data);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
@@ -94,7 +114,7 @@ app.post('/api/checkout/:id/verify', async (req, res) => {
     }
   }
   try {
-    const status = await pay.checkStatus(req.params.id);
+    const status = await getPay().checkStatus(req.params.id);
     res.json({ cron: cronResult, status: status.data });
   } catch (e: any) {
     res.status(500).json({ error: e.message, cron: cronResult });
