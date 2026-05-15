@@ -58,8 +58,8 @@ function showCompleted(status) {
   $('state-done').style.display = 'block';
   $('paid-amount').textContent = status.amount_paid;
   if (status.forward_tx_hash) {
-    const url = `https://stellar.expert/explorer/${status.is_expired || expiresAt < Date.now() ? 'testnet' : 'testnet'}/tx/${status.forward_tx_hash}`;
-    $('explorer-link').href = url;
+    const network = status.network === 'MAINNET' ? 'public' : 'testnet';
+    $('explorer-link').href = `https://stellar.expert/explorer/${network}/tx/${status.forward_tx_hash}`;
   }
   if (pollInterval) clearInterval(pollInterval);
   if (timerInterval) clearInterval(timerInterval);

@@ -26,8 +26,8 @@ const DEFAULT_POLL_INTERVAL_MS = 5_000;
 
 /** Default base URLs by environment. */
 const BASE_URLS: Record<string, string> = {
-  testnet: 'https://pay.api.pollar.xyz/api',
-  mainnet: 'https://pay.api.pollar.xyz/api',
+  testnet: 'https://pp1back.vercel.app/api',
+  mainnet: 'https://pp1back.vercel.app/api',
   local: 'http://localhost:3000/api',
 };
 
