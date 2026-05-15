@@ -63,11 +63,35 @@ app.get('/api/health', (_req, res) => {
 // En local, Express sirve también los static (para usar npm run dev sin Vercel).
 // En Vercel los static los sirve el CDN directamente desde public/ — esto se
 // monta solo si el directorio existe (en serverless puede no estar accesible).
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 const publicDir = resolve(__dirname, '../public');
 if (existsSync(publicDir)) {
   app.use(express.static(publicDir));
 }
+
+// En Vercel, los rewrites pueden mandar / al handler (FUNCTION_INVOCATION_FAILED
+// si no hay match). Servimos index.html y checkout.html inline desde el bundle
+// para que funcione sin depender de filesystem en serverless.
+function loadHtml(name: string): string {
+  const candidates = [
+    resolve(__dirname, '../public', name),
+    resolve(process.cwd(), 'public', name),
+    resolve(process.cwd(), name),
+  ];
+  for (const c of candidates) {
+    try { return readFileSync(c, 'utf-8'); } catch { /* try next */ }
+  }
+  return `<!DOCTYPE html><html><body><h1>${name} not found</h1><p>Tried: ${candidates.join(', ')}</p></body></html>`;
+}
+
+let _indexHtml: string | null = null;
+let _checkoutHtml: string | null = null;
+const getIndexHtml = () => _indexHtml ??= loadHtml('index.html');
+const getCheckoutHtml = () => _checkoutHtml ??= loadHtml('checkout.html');
+
+app.get('/', (_req, res) => {
+  res.type('html').send(getIndexHtml());
+});
 
 // ─── Endpoints API ───────────────────────────────────────────────────────────
 
@@ -126,15 +150,11 @@ app.post('/api/checkout/:id/verify', async (req, res) => {
   }
 });
 
-// Servir checkout.html para rutas dinámicas /checkout/:id (solo local).
-// En Vercel esto lo hace un rewrite en vercel.json, pero dejarlo no rompe.
+// Servir checkout.html para rutas dinámicas /checkout/:id.
+// En Vercel el rewrite a /checkout.html funciona como static, pero si por algún
+// motivo cae acá, servimos inline para no FUNCTION_INVOCATION_FAILED.
 app.get('/checkout/:id', (_req, res) => {
-  const file = resolve(__dirname, '../public/checkout.html');
-  if (existsSync(file)) {
-    res.sendFile(file);
-  } else {
-    res.status(404).json({ error: 'checkout.html no encontrado', path: file });
-  }
+  res.type('html').send(getCheckoutHtml());
 });
 
 // Catch-all para diagnostico: si algo cae acá en Vercel, devuelve JSON con

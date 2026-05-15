@@ -1,8 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/handler.ts": {
+      "includeFiles": "public/**"
+    }
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/handler" },
-    { "source": "/checkout/:id", "destination": "/checkout.html" },
-    { "source": "/", "destination": "/index.html" }
+    { "source": "/checkout/:id", "destination": "/api/handler" },
+    { "source": "/", "destination": "/api/handler" }
   ]
 }
