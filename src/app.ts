@@ -86,11 +86,42 @@ function loadHtml(name: string): string {
 
 let _indexHtml: string | null = null;
 let _checkoutHtml: string | null = null;
-const getIndexHtml = () => _indexHtml ??= loadHtml('index.html');
-const getCheckoutHtml = () => _checkoutHtml ??= loadHtml('checkout.html');
+function getIndexHtml(): string {
+  if (_indexHtml === null) _indexHtml = loadHtml('index.html');
+  return _indexHtml;
+}
+function getCheckoutHtml(): string {
+  if (_checkoutHtml === null) _checkoutHtml = loadHtml('checkout.html');
+  return _checkoutHtml;
+}
 
 app.get('/', (_req, res) => {
-  res.type('html').send(getIndexHtml());
+  try {
+    res.type('html').send(getIndexHtml());
+  } catch (e: any) {
+    res.status(500).json({ error: 'getIndexHtml failed', message: e?.message, stack: e?.stack });
+  }
+});
+
+// Endpoint de diagnóstico para ver qué hay en el filesystem serverless
+app.get('/api/debug', (_req, res) => {
+  let files: string[] | string = 'publicDir does not exist';
+  try {
+    if (existsSync(publicDir)) {
+      const { readdirSync } = require('fs');
+      files = readdirSync(publicDir);
+    }
+  } catch (e: any) {
+    files = `error: ${e.message}`;
+  }
+  res.json({
+    __dirname,
+    cwd: process.cwd(),
+    publicDir,
+    publicDirExists: existsSync(publicDir),
+    cwdPublicExists: existsSync(resolve(process.cwd(), 'public')),
+    files,
+  });
 });
 
 // ─── Endpoints API ───────────────────────────────────────────────────────────
