@@ -63,7 +63,7 @@ app.get('/api/health', (_req, res) => {
 // En local, Express sirve también los static (para usar npm run dev sin Vercel).
 // En Vercel los static los sirve el CDN directamente desde public/ — esto se
 // monta solo si el directorio existe (en serverless puede no estar accesible).
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 const publicDir = resolve(__dirname, '../public');
 if (existsSync(publicDir)) {
   app.use(express.static(publicDir));
@@ -108,7 +108,6 @@ app.get('/api/debug', (_req, res) => {
   let files: string[] | string = 'publicDir does not exist';
   try {
     if (existsSync(publicDir)) {
-      const { readdirSync } = require('fs');
       files = readdirSync(publicDir);
     }
   } catch (e: any) {
@@ -204,3 +203,7 @@ app.use((err: Error, _req: any, res: any, _next: any) => {
   console.error('[express error]', err);
   res.status(500).json({ error: err.message, stack: err.stack });
 });
+
+// Default export para que Vercel pueda invocar este módulo directamente
+// (algunas configuraciones del proyecto tratan a src/app.ts como handler).
+export default app;
